@@ -1,5 +1,6 @@
 package com.codeplus.digger.core;
 
+import com.codeplus.digger.core.api.TablesSupplier;
 import com.google.common.graph.MutableGraph;
 import com.google.gson.Gson;
 import java.io.BufferedReader;
@@ -17,25 +18,27 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class Digger {
 
+    public static Digger instance() {
+        return new Digger(
+            new GraphFromTablesBuilder(),
+            new GraphToCommandsService()
+        );
+    }
 
-    private DatabaseSchemaLoader databaseSchemaLoader;
     private GraphFromTablesBuilder graphBuilder;
     private GraphToCommandsService graphToCommandsService;
 
-    public Digger(DatabaseSchemaLoader databaseSchemaLoader,
-        GraphFromTablesBuilder graphBuilder, GraphToCommandsService graphToCommandsService) {
-        this.databaseSchemaLoader = databaseSchemaLoader;
+    Digger(GraphFromTablesBuilder graphBuilder,
+        GraphToCommandsService graphToCommandsService) {
         this.graphBuilder = graphBuilder;
         this.graphToCommandsService = graphToCommandsService;
     }
 
-    public void createScript() {
+    public void createScript(TablesSupplier tableSupplier) {
 
         try {
-            //load an database schema
-//            final List<Table> tables = databaseSchemaLoader.loadSchema();
 
-            final List<Table> tables = loadFromFile();
+            final List<Table> tables = mapApiToInternalTables(tableSupplier);
 
 //            findTablesWithObjectColumns(tables);
 
@@ -59,9 +62,8 @@ public final class Digger {
                 .collect(Collectors.toMap(
                     sd -> sd.getFromTable().getName(),
                     i -> i,
-                    (a,b) -> a
+                    (a, b) -> a
                 ));
-
 
             //and create sql insert script
             //push to file
@@ -70,6 +72,26 @@ public final class Digger {
         } catch (Exception ex) {
             log.error("Unknown error", ex);
         }
+    }
+
+    private List<Table> mapApiToInternalTables(TablesSupplier tableSupplier) {
+        return tableSupplier.get().stream()
+                    .map(
+                        apiTable -> {
+                            List<Column> columns = apiTable.getDataColumns().stream()
+                                .map(c -> Column.builder().name(c.getName()).build())
+                                .collect(Collectors.toList());
+
+                            List<Column> refsColumns = apiTable.getReferenceColumns().stream()
+                                .map(c -> Column.builder().name(c.getName()).build())
+                                .collect(Collectors.toList());
+
+                            return Table.builder().name(apiTable.getName())
+                                .dataColumns(columns)
+                                .referenceColumns(refsColumns)
+                                .build();
+                        }
+                    ).collect(Collectors.toList());
     }
 
 

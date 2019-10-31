@@ -2,6 +2,7 @@ package com.codeplus.digger.core;
 
 import static java.util.stream.Collectors.toList;
 
+import com.google.common.collect.TreeTraverser;
 import com.google.common.graph.MutableGraph;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +18,7 @@ final class GraphToCommandsService {
     public Set<SelectionData> prepareCommands(MutableGraph<Table> graph,
         Map<String, Table> tablesMap) {
         Table eventNode = tablesMap.get("event");
+
 
         Set<Table> allRelations = findAllRelations(graph, eventNode, new HashSet<>());
 

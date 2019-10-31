@@ -11,7 +11,18 @@
   <packaging>pom</packaging>
   <name>digger</name>
 
+
+  <properties>
+
+    <java.version>1.8</java.version>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+  </properties>
+
   <modules>
     <module>digger-core</module>
+    <module>jdbc</module>
+    <module>spring-console-app-example</module>
   </modules>
 </project>
