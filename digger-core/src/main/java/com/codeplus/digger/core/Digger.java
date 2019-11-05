@@ -94,7 +94,6 @@ public final class Digger {
                     ).collect(Collectors.toList());
     }
 
-
     private List<Table> loadFromFile() throws IOException {
         final List<Table> tables = new ArrayList<>();
 
