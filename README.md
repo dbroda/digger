@@ -1,2 +1,2 @@
 # digger
-Dig for data for your tests
+Dig a data for your tests
