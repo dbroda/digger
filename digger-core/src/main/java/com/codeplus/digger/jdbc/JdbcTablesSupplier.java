@@ -10,8 +10,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import lombok.AllArgsConstructor;
@@ -26,11 +26,18 @@ public class JdbcTablesSupplier implements TablesSupplier {
     private static final String COLUMN_NAME = "COLUMN_NAME";
     private static final String FK = "FK";
     private static final String EMPTY_STRING = "";
+    private final Stack<Table> stackedTables;
 
     private DataSource dataSource;
 
     public JdbcTablesSupplier(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.stackedTables = init();
+    }
+
+    @Override
+    public Table get() {
+        return stackedTables.pop();
     }
 
     @Data
@@ -42,8 +49,9 @@ public class JdbcTablesSupplier implements TablesSupplier {
 
     }
 
-    @Override
-    public Collection<com.codeplus.digger.core.api.Table> get() {
+    private Stack<Table> init() {
+
+        Stack<Table> stack = new Stack<>();
 
         try (Connection connection = dataSource.getConnection()) {
 
@@ -53,15 +61,18 @@ public class JdbcTablesSupplier implements TablesSupplier {
 
             log.info("Loaded {} tables", tables.size());
 
-            return tables.parallelStream()
+            tables.stream()
                 .map(t -> getTableWithSelectableColumns(metaData, t))
                 .map(twc -> mapToTable(tables, twc))
-                .collect(Collectors.toCollection(() -> new ArrayList<>()));
+                .forEach(
+                    t -> stack.push(t)
+                );
 
+            return stack;
 
         } catch (Exception ex) {
             log.error("Digging for data failed", ex);
-            return new ArrayList<>();
+            return stack;
         }
     }
 

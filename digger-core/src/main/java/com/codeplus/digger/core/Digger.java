@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -75,7 +76,7 @@ public final class Digger {
     }
 
     private List<Table> mapApiToInternalTables(TablesSupplier tableSupplier) {
-        return tableSupplier.get().stream()
+        return Stream.generate(tableSupplier)
                     .map(
                         apiTable -> {
                             List<Column> columns = apiTable.getDataColumns().stream()

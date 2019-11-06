@@ -5,6 +5,9 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+/***
+ * Table that corresponds to tables in sql db manner
+ */
 @Builder
 @Data
 public final class Table {

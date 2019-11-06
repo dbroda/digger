@@ -2,7 +2,6 @@ package com.codeplus.digger.examples.app;
 
 import com.codeplus.digger.core.Digger;
 import com.codeplus.digger.jdbc.JdbcTablesSupplier;
-import java.util.ArrayList;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
