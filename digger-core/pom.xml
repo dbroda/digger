@@ -22,7 +22,8 @@
     <java.version>1.8</java.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-
+    <vavr.version>0.9.3</vavr.version>
+    <vavr-gson.version>0.10.2</vavr-gson.version>
   </properties>
 
   <dependencies>
@@ -47,6 +48,15 @@
       <artifactId>gson</artifactId>
       <version>${gson.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>io.vavr</groupId>
+      <artifactId>vavr</artifactId>
+      <version>${vavr.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vavr</groupId>
+      <artifactId>vavr-gson</artifactId>
+      <version>${vavr-gson.version}</version>
+    </dependency>
   </dependencies>
 </project>

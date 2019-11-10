@@ -14,17 +14,13 @@
   <properties>
     <spring-boot.version>2.2.0.RELEASE</spring-boot.version>
     <mysql-connector-java.version>8.0.18</mysql-connector-java.version>
+    <vavr.version>0.9.3</vavr.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.codeplus</groupId>
       <artifactId>digger-core</artifactId>
-      <version>1.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.codeplus</groupId>
-      <artifactId>digger-jdbc</artifactId>
       <version>1.0</version>
     </dependency>
     <dependency>
@@ -46,6 +42,12 @@
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>${mysql-connector-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vavr</groupId>
+      <artifactId>vavr</artifactId>
+      <version>${vavr.version}</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 

@@ -1,7 +1,9 @@
 package com.codeplus.digger.core.api;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Column contains data about {@link Table table's} columns
@@ -10,6 +12,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public final class Column {
 
     private String name;

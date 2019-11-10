@@ -1,23 +1,31 @@
 package com.codeplus.digger.core.api;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.vavr.collection.List;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /***
  * Table that corresponds to tables in sql db manner
  */
 @Builder
 @Data
-public final class Table {
+@NoArgsConstructor
+@AllArgsConstructor
+public final class Table implements Comparable<Table>{
 
     private String name;
 
-    @Builder.Default
-    private List<ReferenceColumn> referenceColumns = new ArrayList<>();
+    @Builder.Default()
+    private List<ReferenceColumn> referenceColumns = List.empty();
 
     @Builder.Default
-    private List<Column> dataColumns = new ArrayList<>();
+    private List<Column> dataColumns = List.empty();
 
+    @Override
+    public int compareTo(Table o) {
+        return name.compareTo(o.name);
+    }
 }

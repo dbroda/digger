@@ -1,13 +1,10 @@
 package com.codeplus.digger.core;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
-import com.google.common.graph.ElementOrder;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
-import java.util.List;
-import java.util.Map;
+import io.vavr.collection.List;
+import io.vavr.collection.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,24 +25,29 @@ final class GraphFromTablesBuilder {
     }
 
     public Map<String, Table> getStringTableMap(List<Table> tables) {
-        return tables.stream().collect(
-            toMap(Table::getName, i -> i)
-        );
+        return tables.toMap(Table::getName, i -> i);
     }
 
 
     private void addNodesToGraph(List<Table> tables, MutableGraph<Table> mutableGraph,
         Map<String, Table> tablesMap) {
-        tables.stream().forEach(
+        tables.forEach(
+            table -> mutableGraph.addNode(table)
+        );
+
+        tables.forEach(
             table -> {
-
-                mutableGraph.addNode(table);
-                List<Table> collectedTablesFromColumns = table.getReferenceColumns().stream()
+                log.info("Processing {} table", table);
+                List<Table> collectedTablesFromColumns = table.getReferenceColumns()
                     .map(Column::getName)
-                    .map(name -> tablesMap.get(name))
-                    .collect(toList());
+                    .map(c -> c.replace("FK", ""))
+                    .filter(tablesMap::containsKey)
+                    .map(name -> tablesMap.get(name).get())
+                    .toList();
 
-                collectedTablesFromColumns.stream().forEach(
+                log.info("collectedTablesFromColumns {} ", collectedTablesFromColumns);
+
+                collectedTablesFromColumns.forEach(
                     t -> mutableGraph.putEdge(table, t)
 
                 );
@@ -58,8 +60,6 @@ final class GraphFromTablesBuilder {
 
         //tables are self referenced
         graphBuilder.allowsSelfLoops(true);
-        ElementOrder<?> natural = ElementOrder.natural();
-        graphBuilder.nodeOrder(natural);
 
         return graphBuilder.build();
     }
@@ -67,15 +67,15 @@ final class GraphFromTablesBuilder {
     private void prepareStaticalReferences(MutableGraph<Table> mutableGraph,
         Map<String, Table> tablesMap) {
 
-        mutableGraph.putEdge(tablesMap.get("outcome"), tablesMap.get("event"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("incident"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("event"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("event_participants"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("participant"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("tournament_stage"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("object_participants"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("lineup"));
-        mutableGraph.putEdge(tablesMap.get("property"), tablesMap.get("standing_participants"));
+        mutableGraph.putEdge(tablesMap.get("outcome").get(), tablesMap.get("event").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("incident").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("event").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("event_participants").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("participant").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("tournament_stage").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("object_participants").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("lineup").get());
+        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("standing_participants").get());
 
     }
 

@@ -5,13 +5,14 @@ import com.codeplus.digger.core.api.ReferenceColumn;
 import com.codeplus.digger.core.api.Table;
 import com.codeplus.digger.core.api.TablesSupplier;
 import com.google.common.collect.Lists;
+import io.vavr.collection.List;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Spliterator;
 import java.util.Stack;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import lombok.AllArgsConstructor;
@@ -36,9 +37,30 @@ public class JdbcTablesSupplier implements TablesSupplier {
     }
 
     @Override
-    public Table get() {
-        return stackedTables.pop();
+    public boolean tryAdvance(Consumer<? super Table> action) {
+        if(stackedTables.isEmpty()) {
+            return false;
+        } else {
+            action.accept(stackedTables.pop());
+            return true;
+        }
     }
+
+    @Override
+    public Spliterator<Table> trySplit() {
+        return null;
+    }
+
+    @Override
+    public long estimateSize() {
+        return stackedTables.size();
+    }
+
+    @Override
+    public int characteristics() {
+        return SIZED;
+    }
+
 
     @Data
     @AllArgsConstructor
@@ -61,7 +83,7 @@ public class JdbcTablesSupplier implements TablesSupplier {
 
             log.info("Loaded {} tables", tables.size());
 
-            tables.stream()
+            tables
                 .map(t -> getTableWithSelectableColumns(metaData, t))
                 .map(twc -> mapToTable(tables, twc))
                 .forEach(
@@ -81,9 +103,9 @@ public class JdbcTablesSupplier implements TablesSupplier {
             twc);
 
         return Table.builder()
-            .dataColumns(twc.getColumnNames().stream().map(
+            .dataColumns(twc.getColumnNames().map(
                 c -> Column.builder().name(c).build()
-            ).collect(Collectors.toList()))
+            ).toList())
             .referenceColumns(referenceColumns)
             .name(twc.getTable())
             .build();
@@ -91,31 +113,30 @@ public class JdbcTablesSupplier implements TablesSupplier {
 
     private TableWithColumns getTableWithSelectableColumns(DatabaseMetaData metaData, String t) {
         try (ResultSet rs = getColumnsResultSet(metaData, t)) {
-            final ArrayList<String> columns = new ArrayList<>();
+            final List<String> columns = List.empty();
             while (rs.next()) {
-                columns.add(rs.getString(COLUMN_NAME));
+                columns.append(rs.getString(COLUMN_NAME));
             }
             return new TableWithColumns(t, columns);
         } catch (Exception ex) {
             log.error("Error while loading data for table {}", t);
         }
-        return new TableWithColumns(t, new ArrayList<>());
+        return new TableWithColumns(t, List.empty());
     }
 
     private List<ReferenceColumn> getReferenceColumns(List<String> tables, TableWithColumns twc) {
-        return twc.getColumnNames().stream()
+        return twc.getColumnNames()
             .filter(this::isColumnMayToPointAnotherTable)
             .filter(cn -> isColumnPointingAtTableThatExists(tables, cn))
             .map(cn -> ReferenceColumn.builder().name(cn)
                 .destinationTableName(prepareTableFromColumnName(cn))
                 .build())
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private boolean isColumnPointingAtTableThatExists(List<String> tables, String columnName) {
         String correctedName = prepareTableFromColumnName(columnName);
-        return tables.stream()
-            .anyMatch(t -> t.equalsIgnoreCase(correctedName));
+        return tables.exists(t -> t.equalsIgnoreCase(correctedName));
     }
 
     private String prepareTableFromColumnName(String columnName) {
@@ -123,13 +144,13 @@ public class JdbcTablesSupplier implements TablesSupplier {
     }
 
     private List<String> loadTables(DatabaseMetaData metaData) throws SQLException {
-        final List<String> tables = Lists.newArrayList();
+        final List<String> tables = List.empty();
         try (final ResultSet rsTables =
             metaData.getTables(null, null, null, new String[]{TABLE})) {
             while (rsTables.next()) {
 
                 String tableName = rsTables.getString(TABLE_NAME);
-                tables.add(tableName);
+                tables.append(tableName);
             }
 
         }

@@ -1,7 +1,9 @@
 package com.codeplus.digger.core.api;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 /***
@@ -9,6 +11,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ReferenceColumn {
 
     private String name;
