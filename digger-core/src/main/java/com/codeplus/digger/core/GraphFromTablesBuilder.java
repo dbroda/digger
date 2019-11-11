@@ -3,6 +3,9 @@ package com.codeplus.digger.core;
 
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import com.google.common.graph.MutableValueGraph;
+import com.google.common.graph.ValueGraph;
+import com.google.common.graph.ValueGraphBuilder;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -10,17 +13,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 final class GraphFromTablesBuilder {
 
-    public MutableGraph<Table> buildGraph(List<Table> tables) {
+    public MutableValueGraph<Table, Column> buildGraph(List<Table> tables) {
 
-        final MutableGraph<Table> mutableGraph = buildGraph();
+        final MutableValueGraph<Table, Column> graph = buildGraph();
 
         Map<String, Table> tablesMap = getStringTableMap(tables);
 
-        addNodesToGraph(tables, mutableGraph, tablesMap);
+        addNodesToGraph(tables, graph, tablesMap);
 
-        prepareStaticalReferences(mutableGraph, tablesMap);
+        prepareStaticalReferences(graph, tablesMap);
 
-        return mutableGraph;
+        return graph;
 
     }
 
@@ -29,7 +32,7 @@ final class GraphFromTablesBuilder {
     }
 
 
-    private void addNodesToGraph(List<Table> tables, MutableGraph<Table> mutableGraph,
+    private void addNodesToGraph(List<Table> tables, MutableValueGraph<Table, Column> mutableGraph,
         Map<String, Table> tablesMap) {
         tables.forEach(
             table -> mutableGraph.addNode(table)
@@ -48,34 +51,37 @@ final class GraphFromTablesBuilder {
                 log.info("collectedTablesFromColumns {} ", collectedTablesFromColumns);
 
                 collectedTablesFromColumns.forEach(
-                    t -> mutableGraph.putEdge(table, t)
+                    t -> {
+                        final Column fk =   table.getReferenceColumns()
+                            .find(c -> c.getName().replace("FK", "").equalsIgnoreCase(t.getName()))
+                            .get();
+
+                        mutableGraph.putEdgeValue(table, t, fk);
+
+                    }
 
                 );
             }
         );
     }
 
-    private MutableGraph<Table> buildGraph() {
-        GraphBuilder graphBuilder = GraphBuilder.directed();
-
-        //tables are self referenced
-        graphBuilder.allowsSelfLoops(true);
-
-        return graphBuilder.build();
+    private MutableValueGraph<Table, Column> buildGraph() {
+        return ValueGraphBuilder.directed().allowsSelfLoops(true).build();
     }
 
-    private void prepareStaticalReferences(MutableGraph<Table> mutableGraph,
+    private void prepareStaticalReferences(MutableValueGraph<Table, Column> mutableGraph,
         Map<String, Table> tablesMap) {
 
-        mutableGraph.putEdge(tablesMap.get("outcome").get(), tablesMap.get("event").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("incident").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("event").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("event_participants").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("participant").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("tournament_stage").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("object_participants").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("lineup").get());
-        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("standing_participants").get());
+//TODO add object objectFK tables
+//        mutableGraph.putEdge(tablesMap.get("outcome").get(), tablesMap.get("event").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("incident").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("event").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("event_participants").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("participant").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("tournament_stage").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("object_participants").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("lineup").get());
+//        mutableGraph.putEdge(tablesMap.get("property").get(), tablesMap.get("standing_participants").get());
 
     }
 

@@ -5,13 +5,12 @@ import com.codeplus.digger.core.api.ID;
 import com.codeplus.digger.core.api.ReferenceColumn;
 import com.codeplus.digger.core.api.Script;
 import com.codeplus.digger.core.api.TablesSupplier;
-import com.google.common.graph.MutableGraph;
+import com.google.common.graph.MutableValueGraph;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
-import io.vavr.collection.Set;
 import io.vavr.gson.VavrGson;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -38,14 +37,15 @@ public final class Digger<T extends ID> {
         return new Digger(
             commandsToScript,
             new GraphFromTablesBuilder(),
-            new GraphToCommandsService()
+            new GraphToCommandsSequence(
+                List.of(new SuccessorsToCommandsServiceImpl(), new PredecessorsToCommandsService()))
         );
     }
 
 
     private CommandsToScript commandsToScripts;
     private GraphFromTablesBuilder graphBuilder;
-    private GraphToCommandsService graphToCommandsService;
+    private GraphToCommands graphToCommandsServiceImpl;
 
 
     public void createScript(String startingNode, TablesSupplier tableSupplier, List<T> ids) {
@@ -61,17 +61,19 @@ public final class Digger<T extends ID> {
 
             final List<Table> tables = mapApiToInternalTables(fileTablesSupplier);
             //prepare graph
-            MutableGraph<Table> graph = graphBuilder.buildGraph(tables);
+            MutableValueGraph<Table, Column> graph = graphBuilder.buildGraph(tables);
 
             //seek an event node and find descendants
             Map<String, Table> tablesMap = graphBuilder.getStringTableMap(tables);
 
             //prepare commands for sql processing
-            List<SelectionData> selectionDataSet = graphToCommandsService
+            List<SelectionData> selectionDataSet = graphToCommandsServiceImpl
                 .prepareCommands(startingNode, graph, tablesMap);
 
-            final List<com.codeplus.digger.core.api.SelectionData> selectionDataApi = transform2Api(
-                selectionDataSet);
+            //prepare sql to load data from database
+            //and create sql insert script
+            final List<com.codeplus.digger.core.api.SelectionData> selectionDataApi =
+                transform2Api(selectionDataSet);
 
             final List<Script> sqlCommands = ids.flatMap(id ->
                 commandsToScripts.generateScript(selectionDataApi, id)
@@ -81,11 +83,6 @@ public final class Digger<T extends ID> {
                 System.out::println
             );
 
-//            System.out.println(sqlCommands);
-
-            //prepare sql to load data from database
-
-            //and create sql insert script
             //push to file
             //build docker image or docker file
 
